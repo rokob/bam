@@ -14,7 +14,8 @@
 %% Application callbacks
 
 start(_StartType, _StartArgs) ->
-  cowboy:start_http(bam_api_listener, 100, [{port, 8080}],
+  Port = bam_conf:get_val(bam_api, api, port, 8080),
+  cowboy:start_http(bam_api_listener, 100, [{port, Port}],
     [{env,
       [
         {dispatch, dispatch()}
@@ -29,8 +30,9 @@ stop(_State) ->
 %% Private
 
 dispatch() ->
+  Host = bam_conf:get_val(bam_api, api, host, <<"api.bam.io">>),
   cowboy_router:compile([
-    {<<"api.bam.io">>, routes()}
+    {Host, routes()}
   ]).
 
 routes() ->

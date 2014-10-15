@@ -35,7 +35,7 @@ get_val(SectionName, Name, Default) ->
   get_val_from_section(application:get_env(SectionName), Name, Default).
 
 get_val(Application, SectionName, Name, Default) ->
-  get_val_from_section(applcation:get_env(Application, SectionName), Name, Default).
+  get_val_from_section(application:get_env(Application, SectionName), Name, Default).
 
 get_val_from_section({ok, Section}, Name, Default) ->
   proplists:get_value(Name, Section, Default);
