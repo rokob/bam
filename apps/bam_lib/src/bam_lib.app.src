@@ -1,0 +1,16 @@
+{application, bam_lib,
+ [
+  {description, "An Erlang bam_lib library"},
+  {vsn, "0.0.1"},
+  {modules, [
+             bam_lib,
+             bam_conf
+            ]},
+  {registered, []},
+  {applications,
+    [
+      kernel,
+      stdlib
+    ]},
+  {env, []}
+ ]}.

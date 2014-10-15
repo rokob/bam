@@ -15,7 +15,7 @@
 %% Application callbacks
 
 start(_StartType, _StartArgs) ->
-  cowboy:start_http(?APPNAME_listener, 100, [{port, 8080}],
+  cowboy:start_http(bam_api_listener, 100, [{port, 8080}],
     [{env,
       [
         {dispatch, dispatch()}

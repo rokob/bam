@@ -10,3 +10,4 @@ deps
 *.dump
 ebin
 apps/*/ebin
+erlcinfo
