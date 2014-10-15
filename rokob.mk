@@ -53,9 +53,7 @@ app::
 	@$(REBAR) compile skip_deps=true
 
 apistart:: app
-	@exec erl -pa $(PWD)/apps/*/ebin -pa $(PWD)/deps/*/ebin \
-	    -config $(PWD)/apps/*/priv/app.config \
-	    -s bam_api
+	@exec ./_rel/bam/bin/bam
 
 rel:: deps app
 	@$(RELX)
