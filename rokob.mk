@@ -1,6 +1,7 @@
 .PHONY: all deps app test rel docs clean help
 
 REBAR=./rebar
+RELX=./relx
 
 ROKOB_MK_VERSION = 1
 
@@ -35,6 +36,9 @@ help::
 deps::
 	@$(REBAR) get-deps
 
+compile::
+	@$(REBAR) compile
+
 clean::
 	$(gen_verbose) rm -f erl_crash.dump
 	@$(REBAR) clean
@@ -54,7 +58,7 @@ apistart:: app
 	    -s bam_api
 
 rel:: deps app
-	@echo "DO SOMETHING HERE"
+	@$(RELX)
 
 docs::
 	@$(REBAR) doc

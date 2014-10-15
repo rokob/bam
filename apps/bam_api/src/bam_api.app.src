@@ -8,7 +8,7 @@
     stdlib,
     cowboy,
     jiffy,
-    erlang_protobuffs
+    protobuffs
   ]},
   {mod, {bam_api_app, []}},
   {env, []}

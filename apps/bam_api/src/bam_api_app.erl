@@ -5,7 +5,6 @@
 % @end
 
 -module(bam_api_app).
-
 -behaviour(application).
 
 -export([start/2, stop/1]).
@@ -49,7 +48,8 @@ valid_version(Value) when is_binary(Value) ->
  try
    [$v | Num] = binary_to_list(Value),
    {true, list_to_integer(Num)}
- catch _:_ -> false
+ catch
+   _:_ -> false
  end.
 
 valid_id(Value) when is_binary(Value) ->
