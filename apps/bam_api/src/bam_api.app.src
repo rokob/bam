@@ -1,0 +1,15 @@
+{application, bam_api,
+ [
+  {description, "Bam <API> - for when you just wanna know"},
+  {vsn, "0.0.1"},
+  {registered, []},
+  {applications, [
+    kernel,
+    stdlib,
+    cowboy,
+    jiffy,
+    erlang_protobuffs
+  ]},
+  {mod, {bam_api_app, []}},
+  {env, []}
+ ]}.
