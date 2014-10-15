@@ -1,7 +1,7 @@
 language: erlang
+otp_release:
+  - 17.1
+  - 17.0
 notifications:
   recipients:
     - wvvwwvw@gmail.com
-  otp_release:
-    - 17.1
-    - 17.0
