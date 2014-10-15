@@ -3,6 +3,7 @@
 % @doc
 %   The application module for the Bam API
 % @end
+
 -module(bam_api_app).
 
 -behaviour(application).
