@@ -1,18 +1,14 @@
 -module(bam_lib).
 
-%% bam_lib: bam_lib library's entry point.
-
 -export([my_func/0]).
-
 
 %% API
 
 my_func() ->
-    ok().
+  io:format("~p~n", [bam_conf:get_val(bam_lib, whoa, answer, 69)]),
+  ok().
 
 %% Internals
 
 ok() ->
-    ok.
-
-%% End of Module.
+  ok.

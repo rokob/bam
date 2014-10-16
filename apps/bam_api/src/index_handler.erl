@@ -19,5 +19,6 @@ content_types_provided(Req, State) ->
   {ContentTypes, Req, State}.
 
 get_json(Req, State) ->
+  bam_lib:my_func(),
   Result = <<"{\"hello\": \"world\"}">>,
   {Result, Req, State}.
