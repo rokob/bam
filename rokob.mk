@@ -12,9 +12,6 @@ gen_verbose = $(gen_verbose_$(V))
 
 all:: deps app rel
 
-clean::
-	$(gen_verbose) rm -f erl_crash.dump
-
 help::
 	@printf "%s\n" \
 		"rokob.mk (version $(ROKOB_MK_VERSION))" \

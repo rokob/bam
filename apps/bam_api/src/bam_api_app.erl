@@ -9,6 +9,10 @@
 
 -export([start/2, stop/1]).
 
+-ifdef(TEST).
+-include_lib("eunit/include/eunit.hrl").
+-endif.
+
 -define(APPNAME, bam_api).
 
 %% Application callbacks
@@ -59,3 +63,27 @@ valid_id(Value) when is_binary(Value) ->
 
 valid_character_pred(C) ->
   (C > 47 andalso C < 58) orelse (C > 64 andalso C < 91) orelse (C > 96 andalso C < 123).
+
+%% Test
+
+-ifdef(TEST).
+valid_version_test_() ->
+  [
+    {"Completely wrong is not a version",
+      fun() ->
+        false = valid_version(<<"blah">>)
+      end},
+    {"Correct version is parsed to a number",
+      fun() ->
+        {ok, 42} = valid_version(<<"v42">>)
+      end},
+    {"Partially right is still wrong",
+      fun() ->
+        false = valid_version(<<"v0x">>)
+      end},
+    {"I WANT TO FAIL",
+      fun() ->
+        false = valid_version(<<"v1">>)
+      end}
+  ].
+-endif.
