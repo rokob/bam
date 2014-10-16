@@ -75,15 +75,11 @@ valid_version_test_() ->
       end},
     {"Correct version is parsed to a number",
       fun() ->
-        {ok, 42} = valid_version(<<"v42">>)
+        {true, 42} = valid_version(<<"v42">>)
       end},
     {"Partially right is still wrong",
       fun() ->
         false = valid_version(<<"v0x">>)
-      end},
-    {"I WANT TO FAIL",
-      fun() ->
-        false = valid_version(<<"v1">>)
       end}
   ].
 -endif.

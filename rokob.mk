@@ -31,7 +31,7 @@ help::
 		""
 
 deps::
-	@$(REBAR) get-deps
+	@$(REBAR) get-deps compile
 
 compile::
 	@$(REBAR) compile
