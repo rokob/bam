@@ -7,7 +7,7 @@
 init(_, _Req, _Opts) ->
   {upgrade, protocol, cowboy_rest}.
 
-rest_init(Req, Opts) ->
+rest_init(Req, _Opts) ->
   State = [],
   {ok, Req, State}.
 
