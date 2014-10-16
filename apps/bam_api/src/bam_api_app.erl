@@ -55,8 +55,7 @@ valid_version(Value) when is_binary(Value) ->
  end.
 
 valid_id(Value) when is_binary(Value) ->
-  is_alphanumeric(Value).
+  lists:all(fun valid_character_pred/1, binary_to_list(Value)).
 
-%% TODO
-is_alphanumeric(Value) when is_binary(Value) ->
-  true.
+valid_character_pred(C) ->
+  (C > 47 andalso C < 58) orelse (C > 64 andalso C < 91) orelse (C > 96 andalso C < 123).
