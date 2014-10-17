@@ -1,4 +1,4 @@
-.PHONY: all deps app test rel docs clean help
+.PHONY: all deps app test rel docs clean help start
 
 REBAR=./rebar
 RELX=./relx
@@ -27,6 +27,7 @@ help::
 		"  test		Run eunit tests" \
 		"  docs		Generate the documentation using edoc" \
 		"  clean	        Clean up this mess" \
+                "  start             Start up the app in the console" \
 		"  help		Output this and exit" \
 		""
 
@@ -44,16 +45,16 @@ distclean:: clean
 	@$(REBAR) delete-deps
 
 test::
-	@$(REBAR) eunit skip_deps=true
+	@$(REBAR) eunit -r skip_deps=true
 
 app::
 	@$(REBAR) compile skip_deps=true
 
-apistart:: app
-	@exec ./_rel/bam/bin/bam
+start:: app
+	@exec ./_rel/bam/bin/bam console
 
 rel:: deps app
 	@$(RELX)
 
 docs::
-	@$(REBAR) doc
+	@$(REBAR) -r skip_deps=true doc

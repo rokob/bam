@@ -12,3 +12,5 @@ ebin
 apps/*/ebin
 erlcinfo
 _rel/
+*/**/doc/*
+!*/**/doc/overview.edoc
