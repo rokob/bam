@@ -5,7 +5,7 @@
 
 %% API Functions
 
-% @type any() -> any() | undefined.
+% @spec get_section(atom()) -> [{atom(), any()}] | undefined
 % @doc Get a section of from the configuration data, returning undefined if
 % it is not found.
 % @end
