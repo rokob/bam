@@ -20,5 +20,6 @@ content_types_provided(Req, State) ->
 
 get_json(Req, State) ->
   bam_lib:my_func(),
-  Result = <<"{\"hello\": \"world\"}">>,
-  {Result, Req, State}.
+  {AuthValue, Req2} = cowboy_req:meta(authorized, Req),
+  Result = jiffy:encode({[{<<"hello">>, <<"world">>}, {<<"authorized">>, AuthValue}]}),
+  {Result, Req2, State}.
