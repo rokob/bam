@@ -20,7 +20,8 @@
 start(_StartType, _StartArgs) ->
   Port = bam_conf:get_val(bam_api, api, port, 8080),
   cowboy:start_http(bam_api_listener, 100, [{port, Port}],
-    [{env,
+    [{middlewares, [cowboy_router, auth_middleware, cowboy_handler]},
+     {env,
       [
         {dispatch, dispatch()}
       ]
@@ -80,6 +81,18 @@ valid_version_test_() ->
     {"Partially right is still wrong",
       fun() ->
         false = valid_version(<<"v0x">>)
+      end}
+  ].
+
+valid_id_test_() ->
+  [
+    {"All alphanumeric is acceptable",
+      fun() ->
+        true = valid_id(<<"aBcD123">>)
+      end},
+    {"Random characters are not allowed",
+      fun() ->
+        false = valid_id(<<"abc$$$">>)
       end}
   ].
 -endif.
