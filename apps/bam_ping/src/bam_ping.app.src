@@ -1,0 +1,13 @@
+{application, bam_ping,
+ [
+  {description, "Bam <Ping> - The service that does the work"},
+  {vsn, "0.0.1"},
+  {registered, [bam_ping_sup]},
+  {applications, [
+                  kernel,
+                  stdlib,
+                  jiffy
+                 ]},
+  {mod, { bam_ping_app, []}},
+  {env, []}
+ ]}.
