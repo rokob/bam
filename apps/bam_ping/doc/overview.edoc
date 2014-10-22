@@ -1,0 +1,7 @@
+@author rokob <wvvwwvw@gmail.com>
+@copyright 2014 rokob
+@version 0.0.1
+@title Welcome to bam_ping
+@doc
+  This is the core set of workers that go around pinging shit.
+@end
