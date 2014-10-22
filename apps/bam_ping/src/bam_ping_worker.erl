@@ -1,71 +1,75 @@
 -module(bam_ping_worker).
 -behaviour(gen_server).
 
--export([start_link/1,
-         create/1, create/2, create/3,
-         change_interval/2,
-         change_check_type/2,
-         stop_checks/1
-        ]).
+-export([start_link/4, create/4]).
 
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
          terminate/2, code_change/3]).
 
 -record(state, {host,
-                check_interval,
+                port,
                 last_check,
-                check_type}).
+                check}).
 
--define(DEFAULT_CHECK_INTERVAL, 60).
--define(DEFAULT_CHECK_TYPE, ping).
+-record(check, {mod, state, interval}).
 
 %% API
 
-start_link(Configuration) ->
-  gen_server:start_link(?MODULE, [Configuration], []).
+start_link(Host, Port, Interval, CheckMod) ->
+  gen_server:start_link(?MODULE, [Host, Port, Interval, CheckMod], []).
 
-create(Host) ->
-  create(Host, ?DEFAULT_CHECK_INTERVAL).
-create(Host, Interval) ->
-  create(Host, Interval, ?DEFAULT_CHECK_TYPE).
-create(Host, Interval, CheckType) ->
-  bam_ping_worker_sup:start_child({Host, Interval, CheckType}).
-
-change_interval(Pid, NewInterval) ->
-  gen_server:cast(Pid, {change_interval, NewInterval}).
-
-change_check_type(Pid, NewCheckType) ->
-  gen_server:cast(Pid, {change_check_type, NewCheckType}).
-
-stop_checks(Pid) ->
-  gen_server:cast(Pid, stop_checks).
+create(Host, Port, Interval, CheckMod) ->
+  bam_ping_worker_sup:start_child(Host, Port, Interval, CheckMod).
 
 %% Callbacks
 
-init([{Host, CheckInterval, CheckType}]) ->
-  {ok, #state{host = Host,
-              check_interval = CheckInterval,
-              last_check = 0,
-              check_type = CheckType}, 0}. 
+init([Host, Port, CheckInterval, CheckMod]) ->
+  case CheckMod:init(Host, Port) of
+    {ok, State} ->
+      Check = #check{mod = CheckMod,
+                     state = State,
+                     interval = CheckInterval
+                    },
+      {ok, #state{host = Host,
+                  port = Port,
+                  last_check = 0,
+                  check = Check}, 0};
+    {stop, Reason} ->
+      {stop, Reason}
+  end.
 
 handle_call(_Request, _From, State) ->
   {reply, ok, State, current_timeout(State)}.
 
 handle_cast({change_interval, NewInterval}, State) ->
-  NewState = State#state{check_interval = NewInterval},
+  NewState = State#state.check#check{interval = NewInterval},
   {noreply, NewState, current_timeout(NewState)};
-handle_cast({change_check_type, NewCheckType}, State) ->
-  NewState = State#state{check_type = NewCheckType},
-  {noreply, NewState, current_timeout(NewState)};
+handle_cast({change_check_mod, NewCheckMod}, State) ->
+  case NewCheckMod:init(State#state.host, State#state.port) of
+    {ok, NewCheckState} ->
+      NewState = State#state.check#check{state = NewCheckState, mod = NewCheckMod},
+      {noreply, NewState, current_timeout(NewState)};
+    {stop, Reason} ->
+      {stop, Reason, State}
+  end;
 handle_cast(stop_checks, State) ->
   {stop, normal, State};
 handle_cast(_Msg, State) ->
   {noreply, State, current_timeout(State)}.
 
 handle_info(timeout, State) ->
-  {ok, Time} = perform_check(State),
-  NewState = State#state{last_check=Time},
-  {noreply, NewState, current_timeout(NewState)};
+  CurrentTime = now_seconds(),
+  case perform_check(State) of
+    {Time, {ok, Result, NewModState}} ->
+      io:format("Got ~p, Took ~p ms~n", [Result, Time]),
+      NewState = State#state{last_check=CurrentTime,
+                             check=State#state.check#check{state=NewModState}},
+      {noreply, NewState, current_timeout(NewState)};
+    {_Time, {stop, Reason, NewModState}} ->
+      NewState = State#state{last_check=CurrentTime,
+                             check=State#state.check#check{state=NewModState}},
+      {stop, Reason, NewState}
+  end;
 handle_info(_Info, State) ->
   {noreply, State, current_timeout(State)}.
 
@@ -77,11 +81,12 @@ code_change(_OldVsn, State, _Extra) ->
 
 %% Private
 
-perform_check(#state{host=Host, check_type=CheckType}) ->
-  CurrentTime = now_seconds(),
-  io:format("[~p] Performing <~p> for Host: <~p>~n",
-            [CurrentTime, CheckType, Host]),
-  {ok, CurrentTime}.
+perform_check(#state{host=Host, port=Port, check=#check{mod=Mod, state=State}}) ->
+  timer:tc(Mod, perform, [Host, Port, State]).
+
+% now_milliseconds() ->
+%   {Mega, Sec, Micro} = os:timestamp(),
+%   (Mega*1000000 + Sec)*1000 + round(Micro/1000).
 
 now_seconds() ->
   Now = calendar:local_time(),
@@ -100,7 +105,7 @@ current_timeout(State) ->
   CurrentTime = now_seconds(),
   current_timeout(CurrentTime, State).
 current_timeout(CurrentTime, #state{last_check=LastCheck,
-                                    check_interval=CheckInterval}) ->
+                                    check=#check{interval=CheckInterval}}) ->
   time_left(CurrentTime, LastCheck, CheckInterval).
 
 %% Test
@@ -109,15 +114,15 @@ current_timeout(CurrentTime, #state{last_check=LastCheck,
 -include_lib("eunit/include/eunit.hrl").
 
 current_timeout_simple_test() ->
-  State = #state{last_check = 42, check_interval=20},
+  State = #state{last_check = 42, check=#check{interval=20}},
   current_timeout(27, State) =:= time_left(27, 42, 20).
 
 current_timeout_realtime_timeout_test() ->
-  State = #state{last_check = 0, check_interval = 5},
+  State = #state{last_check = 0, check=#check{interval = 5}},
   true = (current_timeout(State) =:= 0).
 
 current_timeout_realtime_keep_going_test() ->
-  State = #state{last_check = now_seconds()-1, check_interval = 60},
+  State = #state{last_check = now_seconds()-1, check=#check{interval = 60}},
   true = (current_timeout(State) > 0).
 
 time_left_test_() ->
@@ -133,6 +138,14 @@ time_left_test_() ->
     {"Current different from Last but within interval",
       fun() ->
         true = (time_left(40, 35, 10) > 0)
+      end},
+    {"An interval of 0 always has no time left",
+      fun() ->
+        true = (time_left(10, 200, 0) =:= 0)
+      end},
+    {"An interval of 0 always has no time left seriously",
+      fun() ->
+        true = (time_left(200, 10, 0) =:= 0)
       end}
   ].
 
