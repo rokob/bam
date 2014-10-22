@@ -6,6 +6,7 @@
   {applications, [
                   kernel,
                   stdlib,
+                  inets,
                   jiffy
                  ]},
   {mod, { bam_ping_app, []}},
