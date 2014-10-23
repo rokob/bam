@@ -46,19 +46,19 @@ create(Host, Port, Interval, CheckMod) ->
 % @spec create(Host :: string(),
 %              Port :: integer(),
 %              Interval :: integer(),
-%              CheckMod :: atom()
+%              CheckMod :: atom(),
 %              CheckOpts :: term()) -> {ok, pid()}
 % @doc
 %   Create a new worker and start it pinging the 'Host' on 'Port'
 %   every 'Interval' seconds using the check defined by 'CheckMod'.
-%   The 'CheckOpts' will be passed to `CheckMod:init/3`.
+%   The 'CheckOpts' will be passed to 'CheckMod:init/3'.
 % @end
 create(Host, Port, Interval, CheckMod, CheckOpts) ->
   bam_ping_worker:create(Host, Port, Interval, CheckMod, CheckOpts).
 
 % @spec change_interval(Pid :: pid(), NewInterval :: integer()) -> ok
 % @doc
-%   Make the checks occur every _NewInterval_ seconds.
+%   Make the checks occur every 'NewInterval' seconds.
 % @end
 change_interval(Pid, NewInterval) ->
   gen_server:cast(Pid, {change_interval, NewInterval}).
