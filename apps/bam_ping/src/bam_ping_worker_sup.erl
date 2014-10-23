@@ -2,7 +2,7 @@
 
 -behaviour(supervisor).
 
--export([start_link/0, start_child/4]).
+-export([start_link/0, start_child/5]).
 
 -export([init/1]).
 
@@ -13,8 +13,8 @@
 start_link() ->
   supervisor:start_link({local, ?SERVER}, ?MODULE, []).
 
-start_child(Host, Port, Interval, CheckMod) ->
-  supervisor:start_child(?SERVER, [Host, Port, Interval, CheckMod]).
+start_child(Host, Port, Interval, CheckMod, CheckOpts) ->
+  supervisor:start_child(?SERVER, [Host, Port, Interval, CheckMod, CheckOpts]).
 
 % Callbacks
 

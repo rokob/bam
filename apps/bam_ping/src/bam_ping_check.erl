@@ -1,6 +1,6 @@
 -module(bam_ping_check).
 
--callback init(Host :: binary(), Port :: integer()) ->
+-callback init(Host :: binary(), Port :: integer(), Opts :: term()) ->
   {ok, State :: term()} |
   {stop, Reason :: term()}.
 

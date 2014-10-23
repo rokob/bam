@@ -1,11 +1,11 @@
 -module(bam_ping_check_ping).
 -behaviour(bam_ping_check).
 
--export([init/2, perform/3]).
+-export([init/3, perform/3]).
 
 -define(CHECK_TYPE, ping).
 
-init(_Host, _Port) ->
+init(_Host, _Port, _Opts) ->
   {ok, []}.
 
 perform(Host, Port, State) ->

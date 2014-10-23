@@ -1,7 +1,7 @@
 -module(bam_ping_worker).
 -behaviour(gen_server).
 
--export([start_link/4, create/4]).
+-export([start_link/5, create/5]).
 
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
          terminate/2, code_change/3]).
@@ -15,25 +15,19 @@
 
 %% API
 
-start_link(Host, Port, Interval, CheckMod) ->
-  gen_server:start_link(?MODULE, [Host, Port, Interval, CheckMod], []).
+start_link(Host, Port, Interval, CheckMod, CheckOpts) ->
+  gen_server:start_link(?MODULE, [Host, Port, Interval, CheckMod, CheckOpts], []).
 
-create(Host, Port, Interval, CheckMod) ->
-  bam_ping_worker_sup:start_child(Host, Port, Interval, CheckMod).
+create(Host, Port, Interval, CheckMod, CheckOpts) ->
+  bam_ping_worker_sup:start_child(Host, Port, Interval, CheckMod, CheckOpts).
 
 %% Callbacks
 
-init([Host, Port, CheckInterval, CheckMod]) ->
-  case CheckMod:init(Host, Port) of
-    {ok, State} ->
-      Check = #check{mod = CheckMod,
-                     state = State,
-                     interval = CheckInterval
-                    },
-      {ok, #state{host = Host,
-                  port = Port,
-                  last_check = 0,
-                  check = Check}, 0};
+init([Host, Port, CheckInterval, CheckMod, CheckOpts]) ->
+  case CheckMod:init(Host, Port, CheckOpts) of
+    {ok, CheckState} ->
+      State = construct_state(Host, Port, CheckMod, CheckState, CheckInterval),
+      {ok, State, 0};
     {stop, Reason} ->
       {stop, Reason}
   end.
@@ -42,12 +36,12 @@ handle_call(_Request, _From, State) ->
   {reply, ok, State, current_timeout(State)}.
 
 handle_cast({change_interval, NewInterval}, State) ->
-  NewState = State#state.check#check{interval = NewInterval},
+  NewState = update_check_interval(State, NewInterval),
   {noreply, NewState, current_timeout(NewState)};
-handle_cast({change_check_mod, NewCheckMod}, State) ->
-  case NewCheckMod:init(State#state.host, State#state.port) of
+handle_cast({change_check_mod, NewCheckMod, CheckOpts}, State) ->
+  case NewCheckMod:init(State#state.host, State#state.port, CheckOpts) of
     {ok, NewCheckState} ->
-      NewState = State#state.check#check{state = NewCheckState, mod = NewCheckMod},
+      NewState = update_check_mod_and_state(State, NewCheckMod, NewCheckState),
       {noreply, NewState, current_timeout(NewState)};
     {stop, Reason} ->
       {stop, Reason, State}
@@ -62,13 +56,10 @@ handle_info(timeout, State) ->
   case perform_check(State) of
     {Time, {ok, Result, NewModState}} ->
       io:format("Got ~p, Took ~p ms~n", [Result, Time]),
-      NewState = State#state{last_check=CurrentTime,
-                             check=State#state.check#check{state=NewModState}},
+      NewState = update_check_state_and_time(State, NewModState, CurrentTime),
       {noreply, NewState, current_timeout(NewState)};
     {_Time, {stop, Reason, NewModState}} ->
-      NewState = State#state{last_check=CurrentTime,
-                             check=State#state.check#check{state=NewModState}},
-      {stop, Reason, NewState}
+      {stop, Reason, update_check_state_and_time(State, NewModState, CurrentTime)}
   end;
 handle_info(_Info, State) ->
   {noreply, State, current_timeout(State)}.
@@ -81,16 +72,36 @@ code_change(_OldVsn, State, _Extra) ->
 
 %% Private
 
-perform_check(#state{host=Host, port=Port, check=#check{mod=Mod, state=State}}) ->
-  timer:tc(Mod, perform, [Host, Port, State]).
+construct_state(Host, Port, CheckMod, CheckState, CheckInterval) ->
+  Check = #check{mod = CheckMod,
+                  state = CheckState,
+                  interval = CheckInterval
+                },
+  #state{host = Host,
+         port = Port,
+         last_check = 0,
+         check = Check}.
 
-% now_milliseconds() ->
-%   {Mega, Sec, Micro} = os:timestamp(),
-%   (Mega*1000000 + Sec)*1000 + round(Micro/1000).
+update_check_state_and_time(State, NewCheckState, CurrentTime) ->
+  NewCheck = State#state.check#check{state=NewCheckState},
+  State#state{last_check=CurrentTime, check=NewCheck}.
+
+update_check_mod_and_state(State, NewCheckMod, NewCheckState) ->
+  State#state.check#check{state = NewCheckState, mod = NewCheckMod}.
+
+update_check_interval(State, NewInterval) ->
+  State#state.check#check{interval = NewInterval}.
 
 now_seconds() ->
   Now = calendar:local_time(),
   calendar:datetime_to_gregorian_seconds(Now).
+
+current_timeout(State) ->
+  CurrentTime = now_seconds(),
+  current_timeout(CurrentTime, State).
+current_timeout(CurrentTime, #state{last_check=LastCheck,
+                                    check=#check{interval=CheckInterval}}) ->
+  time_left(CurrentTime, LastCheck, CheckInterval).
 
 time_left(_CurrentTime, _LastCheck, 0) ->
   0;
@@ -101,12 +112,8 @@ time_left(CurrentTime, LastCheck, CheckInterval) ->
       Time                -> Time * 1000
   end.
 
-current_timeout(State) ->
-  CurrentTime = now_seconds(),
-  current_timeout(CurrentTime, State).
-current_timeout(CurrentTime, #state{last_check=LastCheck,
-                                    check=#check{interval=CheckInterval}}) ->
-  time_left(CurrentTime, LastCheck, CheckInterval).
+perform_check(#state{host=Host, port=Port, check=#check{mod=Mod, state=State}}) ->
+  timer:tc(Mod, perform, [Host, Port, State]).
 
 %% Test
 
