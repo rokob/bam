@@ -113,6 +113,7 @@ time_left(CurrentTime, LastCheck, CheckInterval) ->
   end.
 
 perform_check(#state{host=Host, port=Port, check=#check{mod=Mod, state=State}}) ->
+  bam_ping_event:check({Host, Port, Mod}),
   timer:tc(Mod, perform, [Host, Port, State]).
 
 %% Test
