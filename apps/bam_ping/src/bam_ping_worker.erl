@@ -55,7 +55,7 @@ handle_info(timeout, State) ->
   CurrentTime = now_seconds(),
   case perform_check(State) of
     {Time, {ok, Result, NewModState}} ->
-      io:format("Got ~p, Took ~p ms~n", [Result, Time]),
+      bam_ping_event:check([{result, Result}, {time, Time}]),
       NewState = update_check_state_and_time(State, NewModState, CurrentTime),
       {noreply, NewState, current_timeout(NewState)};
     {_Time, {stop, Reason, NewModState}} ->
@@ -113,7 +113,6 @@ time_left(CurrentTime, LastCheck, CheckInterval) ->
   end.
 
 perform_check(#state{host=Host, port=Port, check=#check{mod=Mod, state=State}}) ->
-  bam_ping_event:check({Host, Port, Mod}),
   timer:tc(Mod, perform, [Host, Port, State]).
 
 %% Test

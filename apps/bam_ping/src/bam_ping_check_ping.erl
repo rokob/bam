@@ -9,8 +9,7 @@ init(_Host, _Port, _Opts) ->
   {ok, []}.
 
 perform(Host, Port, State) ->
-  io:format("Performing <~p> for Host: <~s:~B>~n", [?CHECK_TYPE, Host, Port]),
   Url = lists:flatten([Host, $:, integer_to_list(Port)]),
   {ok, {{_Version, Status, ReasonPhrase}, _Headers, _Body}} = httpc:request(get, {Url, []}, [], []),
-  Result = {Status, ReasonPhrase},
+  Result = [{type, ?CHECK_TYPE}, {host, Host, Port}, {status, Status}, {extra, [ReasonPhrase]}],
   {ok, Result, State}.
