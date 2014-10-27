@@ -35,7 +35,7 @@ stop(_State) ->
 %% Private
 
 dispatch() ->
-  Host = bam_conf:get_val(bam_api, api, host, <<"api.bam.io">>),
+  Host = bam_conf:get_val(bam_api, api, host, <<"api.bambam.io">>),
   cowboy_router:compile([
     {Host, routes()}
   ]).
