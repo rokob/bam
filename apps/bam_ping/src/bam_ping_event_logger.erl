@@ -19,7 +19,7 @@ init([]) ->
   {ok, #state{}}.
 
 handle_event({check, Data}, State) ->
-  io:format("Check Performed :: ~p~n", [Data]),
+  io:format("~nCheck Performed :: ~p~n", [Data]),
   {ok, State};
 handle_event(_Event, State) ->
   {ok, State}.
