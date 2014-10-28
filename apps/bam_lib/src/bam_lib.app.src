@@ -4,7 +4,8 @@
   {vsn, "0.0.1"},
   {modules, [
              bam_lib,
-             bam_conf
+             bam_conf,
+             bam_lib_bin_to_hex
             ]},
   {registered, []},
   {applications,

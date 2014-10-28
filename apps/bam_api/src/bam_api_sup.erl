@@ -11,10 +11,10 @@
 % API
 
 start_link() ->
-    supervisor:start_link({local, ?MODULE}, ?MODULE, []).
+  supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 
 % Callbacks
 
 init([]) ->
-    {ok, { {one_for_one, 5, 10}, []} }.
+  {ok, { {one_for_one, 5, 10}, []} }.
 

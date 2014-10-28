@@ -43,7 +43,7 @@ dispatch() ->
 routes() ->
   VersionConstraint = {version, function, fun valid_version/1},
   IdConstraint = {id, function, fun valid_id/1},
-  [ 
+  [
     {"/assets/[...]", cowboy_static, {priv_dir, ?APPNAME, "static/assets"}},
     {"/:version", [VersionConstraint], index_handler, []},
     {"/:version/auth", [VersionConstraint], auth_handler, []},

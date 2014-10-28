@@ -1,18 +1,13 @@
 -module(bam_lib).
 
--export([my_func/0, now_milliseconds/0]).
+-export([now_milliseconds/0]).
+-export([bin_to_hex/1]).
 
 %% API
-
-my_func() ->
-  io:format("~p~n", [bam_conf:get_val(bam_lib, whoa, answer, 69)]),
-  ok().
 
 now_milliseconds() ->
   {Mega, Sec, Micro} = os:timestamp(),
   (Mega*1000000 + Sec)*1000 + round(Micro/1000).
 
-%% Internals
-
-ok() ->
-  ok.
+bin_to_hex(B) ->
+  bam_lib_bin_to_hex:bin_to_hex(B).
