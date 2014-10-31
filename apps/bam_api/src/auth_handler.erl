@@ -13,11 +13,15 @@
 -define(SIGN, <<163,87,128,60,175,163,125,15,238,238,141,1>>).
 -define(CHECK, <<"1123B5A9C686EAB942064CB352BA9A18">>).
 
+-record(state, {key, sign}).
+
 init(_, _Req, _Opts) ->
   {upgrade, protocol, cowboy_rest}.
 
 rest_init(Req, _Opts) ->
-  State = [],
+  Key = bam_conf:get_val(bam_api, secrets, authkey, ?KEY),
+  Sign = bam_conf:get_val(bam_api, secrets, signature, ?SIGN),
+  State = #state{key=Key, sign=Sign},
   {ok, Req, State}.
 
 allowed_methods(Req, State) ->
@@ -44,13 +48,13 @@ from_json(Req, State) ->
       {false, Req2, State}
   end.
 
-handle_login(Req, State) ->
+handle_login(Req, State#state{key=Key, sign=SignKey}) ->
   {JSON, Req2} = get_json_body(Req),
   {ok, Username, Password} = get_user_data_from_json(JSON),
-  case validate_user(Username, Password) of
+  case validate_user(Username, Password, Key) of
     true ->
       Token = create_token(),
-      Signature = sign_token(Username, Token),
+      Signature = sign_token(Username, Token, SignKey),
       Response = jiffy:encode({[{<<"status">>, <<"new">>}, {<<"token">>, Token}, {<<"signature">>, Signature}]}),
       Req3 = cowboy_req:set_resp_body(Response, Req2),
       {true, Req3, State};
@@ -66,7 +70,7 @@ handle_update(Req, State) ->
   case validate_update_data(Username, Token, Signature) of
     true ->
       NewToken = create_token(),
-      NewSignature = sign_token(Username, NewToken),
+      NewSignature = sign_token(Username, NewToken, SignKey),
       Response = jiffy:encode({[{<<"status">>, <<"refreshed">>}, {<<"token">>, NewToken}, {<<"signature">>, NewSignature}]}),
       Req3 = cowboy_req:set_resp_body(Response, Req2),
       {true, Req3, State};
@@ -83,8 +87,8 @@ get_json_body(Req) ->
 create_token() ->
   bam_lib:bin_to_hex(crypto:strong_rand_bytes(16)).
 
-sign_token(Username, Token) ->
-  do_hmac(?SIGN, [Username, Token]).
+sign_token(Username, Token, SignKey) ->
+  do_hmac(SignKey, [Username, Token]).
 
 get_user_data_from_json({[]}) -> false;
 get_user_data_from_json({Proplist}) ->
@@ -99,8 +103,8 @@ get_update_data_from_json({Proplist}) ->
   Signature = proplists:get_value(<<"signature">>, Proplist),
   {ok, Username, Token, Signature}.
 
-validate_user(Username, Password) ->
-  ?CHECK =:= do_hmac(?KEY, [Username, Password]).
+validate_user(Username, Password, Key) ->
+  ?CHECK =:= do_hmac(Key, [Username, Password]).
 
 validate_update_data(Username, Token, Signature) ->
   Signature =:= sign_token(Username, Token).
