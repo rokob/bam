@@ -48,7 +48,7 @@ from_json(Req, State) ->
       {false, Req2, State}
   end.
 
-handle_login(Req, State#state{key=Key, sign=SignKey}) ->
+handle_login(Req, #state{key=Key, sign=SignKey}=State) ->
   {JSON, Req2} = get_json_body(Req),
   {ok, Username, Password} = get_user_data_from_json(JSON),
   case validate_user(Username, Password, Key) of
@@ -64,10 +64,10 @@ handle_login(Req, State#state{key=Key, sign=SignKey}) ->
       {false, Req3, State}
   end.
 
-handle_update(Req, State) ->
+handle_update(Req, #state{sign=SignKey}=State) ->
   {JSON, Req2} = get_json_body(Req),
   {ok, Username, Token, Signature} = get_update_data_from_json(JSON),
-  case validate_update_data(Username, Token, Signature) of
+  case validate_update_data(Username, Token, Signature, SignKey) of
     true ->
       NewToken = create_token(),
       NewSignature = sign_token(Username, NewToken, SignKey),
@@ -106,8 +106,8 @@ get_update_data_from_json({Proplist}) ->
 validate_user(Username, Password, Key) ->
   ?CHECK =:= do_hmac(Key, [Username, Password]).
 
-validate_update_data(Username, Token, Signature) ->
-  Signature =:= sign_token(Username, Token).
+validate_update_data(Username, Token, Signature, SignKey) ->
+  Signature =:= sign_token(Username, Token, SignKey).
 
 do_hmac(Key, Msg) ->
   bam_lib:bin_to_hex(crypto:hmac(sha256, Key, Msg, 16)).
