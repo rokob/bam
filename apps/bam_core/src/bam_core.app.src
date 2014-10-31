@@ -1,0 +1,13 @@
+{application, bam_core,
+ [
+  {description, "The core of baming"},
+  {vsn, "0.0.1"},
+  {registered, []},
+  {applications, [
+                  kernel,
+                  stdlib,
+                  crypto
+                 ]},
+  {mod, { bam_core_app, []}},
+  {env, []}
+ ]}.

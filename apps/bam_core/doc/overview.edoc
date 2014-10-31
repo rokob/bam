@@ -1,0 +1,7 @@
+@author rokob <wvvwwvw@gmail.com>
+@copyright 2014 rokob
+@version 0.0.1
+@title Welcome to bam_core
+@doc
+  This is the abstraction layer around services such as databases, caches, etc.
+@end
