@@ -32,13 +32,10 @@ encode(HeaderJSON, PayloadJSON, Key, Algorithm) ->
 
 do_mac(Key, Data, ?HS256) ->
   crypto:hmac(sha256, Key, Data);
-  % hmac:hmac256(Key, Data);
 do_mac(Key, Data, ?HS384) ->
   crypto:hmac(sha384, Key, Data);
-  % hmac:hmac384(Key, Data);
 do_mac(Key, Data, ?HS512) ->
   crypto:hmac(sha512, Key, Data).
-  % hmac:hmac512(Key, Data).
 
 decode(JWT, KeyList) when is_list(KeyList) ->
   Key = base64url:decode(proplists:get_value(<<"k">>, KeyList)),
