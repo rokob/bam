@@ -5,7 +5,8 @@
   {modules, [
              bam_lib,
              bam_conf,
-             bam_lib_bin_to_hex
+             bam_set
+             %bam_lib_bin_to_hex
             ]},
   {registered, []},
   {applications,
