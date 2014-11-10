@@ -57,8 +57,13 @@ handle_call({verify_token, Token, Key}, _From, State) ->
     error ->
       {reply, error, State};
     Payload ->
-      Reply = {ok, Payload},
-      {reply, Reply, State}
+      case check_if_payload_expired(Payload) of
+        true ->
+          {reply, error, State};
+        _ ->
+          Reply = {ok, Payload},
+          {reply, Reply, State}
+      end
   catch
     error:_Reason ->
       {reply, error, State}
@@ -110,12 +115,36 @@ store_username_password(Username, Password, State=#state{users=Users}) ->
   NewState = State#state{users=NewUsers},
   NewState.
 
+check_if_payload_expired(Payload) ->
+  is_expired(lists:keyfind(<<"expiration">>, 1, Payload)).
+
+is_expired({<<"expiration">>, ExpirationTime}) when is_binary(ExpirationTime) ->
+  integer_to_binary(bam_lib:now_milliseconds()) >= ExpirationTime;
+is_expired(_) -> true.
+
 get_expiration() ->
   integer_to_binary(bam_lib:minutes_from_now(60)).
 
 %% Test
 
 -ifdef(TEST).
+check_if_payload_expired_test_() ->
+  [
+    {"get_expiration should not be expired",
+      fun() ->
+        false = check_if_payload_expired([{<<"expiration">>, get_expiration()}])
+      end},
+    {"time in the past should be expired",
+      fun() ->
+        OldTime = integer_to_binary(bam_lib:now_milliseconds() - 1000),
+        true = check_if_payload_expired([{<<"expiration">>, OldTime}])
+      end},
+    {"garbage is expired",
+      fun() ->
+        true = check_if_payload_expired([{<<"hello">>, <<"12345">>}])
+      end}
+  ].
+
 do_hash_test_() ->
   [
     {"it is deterministic",

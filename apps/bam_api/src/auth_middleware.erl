@@ -23,9 +23,19 @@ execute(Req, Env) ->
 
 is_auth_handler(Req) ->
   {Path, Req2} = cowboy_req:path(Req),
-  [_, Path1] = binary:split(Path, <<$/>>),
-  [_, Path2] = binary:split(Path1, <<$/>>),
-  {Path2 =:= <<"auth">>, Req2}.
+  try split_second(split_second(Path)) of
+    <<"auth">> ->
+      {true, Req2};
+    _ ->
+      {false, Req2}
+  catch
+    error:_Reason ->
+      {false, Req2}
+  end.
+
+split_second(Binary) ->
+  [_, Result] = binary:split(Binary, <<$/>>),
+  Result.
 
 is_authorized(Key, Req) ->
   case check_header(Req) of

@@ -9,6 +9,8 @@ init(_, _Req, _Opts) ->
 
 allowed_methods(Req, State) ->
   Methods = [
+    <<"OPTIONS">>,
+    <<"HEAD">>,
     <<"GET">>
   ],
   {Methods, Req, State}.
@@ -19,7 +21,6 @@ content_types_provided(Req, State) ->
   {ContentTypes, Req, State}.
 
 get_json(Req, State) ->
-  bam_lib:my_func(),
   {AuthValue, Req2} = cowboy_req:meta(authorized, Req),
-  Result = jiffy:encode({[{<<"hello">>, <<"world">>}, {<<"authorized">>, AuthValue}]}),
+  Result = jiffy:encode({[{<<"hello">>, <<"world">>}, {<<"authorized">>, {AuthValue}}]}),
   {Result, Req2, State}.
