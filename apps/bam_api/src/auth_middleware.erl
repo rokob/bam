@@ -6,26 +6,48 @@
 -define(AUTH_HEADER, <<"x-bam-auth-token">>).
 
 execute(Req, Env) ->
-  case is_authorized(Req) of
-    {authorized, Value} ->
-      Req2 = cowboy_req:set_meta(authorized, Value, Req),
-      {ok, Req2, Env};
-    {error, StatusCode} ->
-      {error, StatusCode, Req}
+  {authkey, Key} = lists:keyfind(authkey, 1, Env),
+  case is_auth_handler(Req) of
+    {true, Req2} ->
+      Req3 = cowboy_req:set_meta(authorized, auth, Req2),
+      {ok, Req3, Env};
+    {_, Req2} ->
+      case is_authorized(Key, Req2) of
+        {authorized, Value} ->
+          Req3 = cowboy_req:set_meta(authorized, Value, Req2),
+          {ok, Req3, Env};
+        {error, StatusCode} ->
+          {error, StatusCode, Req2}
+      end
   end.
 
-is_authorized(Req) ->
+is_auth_handler(Req) ->
+  {Path, Req2} = cowboy_req:path(Req),
+  [_, Path1] = binary:split(Path, <<$/>>),
+  [_, Path2] = binary:split(Path1, <<$/>>),
+  {Path2 =:= <<"auth">>, Req2}.
+
+is_authorized(Key, Req) ->
   case check_header(Req) of
     false  ->
       {error, 401};
+    debug ->
+      {authorized, <<"DEBUG">>};
     Value ->
-      {authorized, Value}
+      case bam_auth_store:verify_token(Value, Key) of
+        {ok, Payload} ->
+          {authorized, Payload};
+        _ ->
+          {error, 401}
+      end
   end.
 
 check_header(Req) ->
   case cowboy_req:header(?AUTH_HEADER, Req, undefined) of
     {undefined, _Req2} ->
-      true; % temporary
+      false;
+    {<<"DEBUG">>, _Req2} ->
+      debug;
     {Value, _Req2} ->
       Value
   end.

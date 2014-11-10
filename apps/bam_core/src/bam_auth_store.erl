@@ -53,12 +53,15 @@ handle_call({token_request, Username, Password, Key}, _From, State) ->
       {reply, error, State}
   end;
 handle_call({verify_token, Token, Key}, _From, State) ->
-  case bam_jwt:decode(Token, Key) of
+  try bam_jwt:decode(Token, Key) of
     error ->
       {reply, error, State};
     Payload ->
       Reply = {ok, Payload},
       {reply, Reply, State}
+  catch
+    error:_Reason ->
+      {reply, error, State}
   end;
 handle_call(_Request, _From, State) ->
   {reply, ok, State}.

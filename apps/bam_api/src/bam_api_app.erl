@@ -14,16 +14,19 @@
 -endif.
 
 -define(APPNAME, bam_api).
+-define(KEY, <<122,117,80,198,194,198,125,154,134,248,105,58,140,57,212,129>>).
 
 %% Application callbacks
 
 start(_StartType, _StartArgs) ->
   Port = bam_conf:get_val(bam_api, api, port, 8080),
+  Key = bam_conf:get_val(bam_api, secrets, authkey, ?KEY),
   cowboy:start_http(bam_api_listener, 100, [{port, Port}],
     [{middlewares, [cowboy_router, auth_middleware, cowboy_handler]},
      {env,
       [
-        {dispatch, dispatch()}
+        {dispatch, dispatch(Key)},
+        {authkey, Key}
       ]
     }]
   ),
@@ -34,19 +37,20 @@ stop(_State) ->
 
 %% Private
 
-dispatch() ->
+dispatch(Key) ->
   Host = bam_conf:get_val(bam_api, api, host, <<"api.bambam.io">>),
   cowboy_router:compile([
-    {Host, routes()}
+    {Host, routes(Key)}
   ]).
 
-routes() ->
+routes(Key) ->
   VersionConstraint = {version, function, fun valid_version/1},
   IdConstraint = {id, function, fun valid_id/1},
   [
     {"/assets/[...]", cowboy_static, {priv_dir, ?APPNAME, "static/assets"}},
     {"/:version", [VersionConstraint], index_handler, []},
-    {"/:version/auth", [VersionConstraint], auth_handler, []},
+    {"/:version/auth", [VersionConstraint], auth_handler, [Key]},
+    {"/:version/users", [VersionConstraint], user_handler, []},
     {"/:version/service", [VersionConstraint], service_handler, []},
     {"/:version/service/:id", [VersionConstraint, IdConstraint], service_handler, []}
   ].
